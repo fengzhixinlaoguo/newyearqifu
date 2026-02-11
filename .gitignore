@@ -1,0 +1,13 @@
+# 依赖
+node_modules/
+
+# 环境变量(包含API key,绝对不能提交)
+.env
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db

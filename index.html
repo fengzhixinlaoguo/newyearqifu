@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>新春祈福 | 灵签指路</title>
+
+    <!-- 字体与图标 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Ma+Shan+Zheng&family=Long+Cang&family=Zhi+Mang+Xing&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+
+    <!-- 图像生成与二维码库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- AI API调用模块 -->
+    <script src="ai-api.js"></script>
+
+    <!-- 样式配置 -->
+    <style>
+        :root {
+            --red-main: #c02c38;
+            /* 故宫红 */
+            --red-deep: #7a1a23;
+            /* 深胭脂 */
+            --gold-main: #e0b46a;
+            /* 泥金 */
+            --paper-light: #fdfbf7;
+            /* 宣纸白 */
+            --ink-color: #2b2b2b;
+        }
+
+        body {
+            background-color: var(--red-deep);
+            background-image:
+                radial-gradient(circle at 50% 20%, #d63f4b 0%, #7a1a23 80%),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e0b46a' fill-opacity='0.12'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            font-family: 'Noto Serif SC', serif;
+            color: var(--paper-light);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 字体特效 */
+        .font-calligraphy {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .font-poem {
+            font-family: 'Long Cang', cursive;
+        }
+
+        .font-seal {
+            font-family: 'Zhi Mang Xing', cursive;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(122, 26, 35, 0.45);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(224, 180, 106, 0.3);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 节日灯笼动画 */
+        .lantern {
+            position: absolute;
+            top: -20px;
+            width: 80px;
+            height: 100px;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCAxMDAiPjxlbGxpcHNlIGN4PSI0MCIgY3k9IjUwIiByeD0iMzUiIHJ5PSI0NSIgZmlsbD0iI2MwMmMzOCIgc3Ryb2tlPSIjZTBiNDZhIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDAgNSBMNDAgOTUiIHN0cm9rZT0iI2UwYjQ2YSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjUiLz48cmVjdCB4PSIzMCIgeT0iMCIgd2lkdGg9IjIiIGhlaWdodD0iMTAiIGZpbGw9IiMmYjJiMmIiLz48cmVjdCB4PSIzMCIgeT0iOTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCIgZmlsbD0iIzJiMmIyYiIvPjwvc3ZnPg==') no-repeat center;
+            background-size: contain;
+            transform-origin: top center;
+            animation: swing 4s ease-in-out infinite alternate;
+            z-index: 5;
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
+        }
+
+        .lantern::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            width: 4px;
+            height: 30px;
+            background: #e0b46a;
+            transform: translateX(-50%);
+            box-shadow: 0 0 8px #e0b46a;
+        }
+
+        @keyframes swing {
+            from {
+                transform: rotate(-6deg);
+            }
+
+            to {
+                transform: rotate(6deg);
+            }
+        }
+
+        /* --- 新版梅花竹筒 --- */
+        .bamboo-cylinder-wrapper {
+            position: relative;
+            width: 160px;
+            height: 240px;
+            transform-style: preserve-3d;
+        }
+
+        .bamboo-body {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(92deg, #5c4033 0%, #8b5a2b 30%, #a06a38 50%, #8b5a2b 70%, #5c4033 100%);
+            border-radius: 10px 10px 40px 40px;
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.8),
+                0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid #3e2723;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .bamboo-joint {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 1px 1px rgba(255, 255, 255, 0.1);
+            z-index: 3;
+        }
+
+        .bamboo-top {
+            position: absolute;
+            top: -15px;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background: #3e2723;
+            border-radius: 50%;
+            border: 4px solid #8b5a2b;
+            box-shadow: inset 0 10px 10px rgba(0, 0, 0, 0.9);
+            z-index: 1;
+        }
+
+        .plum-decor {
+            position: absolute;
+            bottom: 10px;
+            right: -10px;
+            width: 100%;
+            height: 60%;
+            z-index: 4;
+            opacity: 0.9;
+            filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes shake-hard {
+
+            0%,
+            100% {
+                transform: rotate(0deg) translateY(0);
+            }
+
+            10% {
+                transform: rotate(-5deg) translateY(-5px);
+            }
+
+            20% {
+                transform: rotate(5deg) translateY(5px);
+            }
+
+            30% {
+                transform: rotate(-5deg) translateY(-5px);
+            }
+
+            40% {
+                transform: rotate(5deg) translateY(5px);
+            }
+
+            50% {
+                transform: rotate(-5deg) translateY(-5px);
+            }
+
+            60% {
+                transform: rotate(5deg) translateY(5px);
+            }
+
+            70% {
+                transform: rotate(-3deg) translateY(-3px);
+            }
+
+            80% {
+                transform: rotate(3deg) translateY(3px);
+            }
+        }
+
+        .animate-shake-hard {
+            animation: shake-hard 0.6s infinite;
+        }
+
+        @keyframes stick-fly {
+            0% {
+                transform: translateY(0) scale(0.8);
+                opacity: 0;
+            }
+
+            60% {
+                transform: translateY(-160px) rotate(5deg) scale(1.05);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-140px) rotate(8deg) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .stick-appear {
+            animation: stick-fly 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        #share-card-container {
+            font-family: 'Noto Serif SC', serif;
+            background: radial-gradient(circle at 50% 30%, #d63f4b 0%, #991b1b 60%, #450a0a 100%);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            color: #fef3c7;
+        }
+
+        .share-ratio-9-16 {
+            width: 375px;
+            height: 667px;
+        }
+
+        .share-ratio-3-4 {
+            width: 450px;
+            height: 600px;
+        }
+
+        .share-ratio-1-1 {
+            width: 500px;
+            height: 500px;
+        }
+
+        .poster-bg-texture {
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23fcd34d' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .poster-border-outer {
+            position: absolute;
+            inset: 12px;
+            border: 2px solid #b45309;
+            z-index: 10;
+            pointer-events: none;
+            border-radius: 2px;
+        }
+
+        .poster-border-inner {
+            position: absolute;
+            inset: 18px;
+            border: 1px solid #fcd34d;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .poster-corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #fcd34d;
+            z-index: 11;
+        }
+
+        .c-tl {
+            top: 12px;
+            left: 12px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .c-tr {
+            top: 12px;
+            right: 12px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .c-bl {
+            bottom: 12px;
+            left: 12px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .c-br {
+            bottom: 12px;
+            right: 12px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 左下角 UI */
+        .bottom-ui {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 50;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            transition: all 0.3s;
+        }
+
+        .user-pill {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e0b46a;
+            font-size: 12px;
+        }
+
+        .btn-gold {
+            background: linear-gradient(to right, #e0b46a, #d4a04d);
+            color: #3e2723;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(224, 180, 106, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-gold:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .writing-vertical {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        /* --- 比例自适应适配 --- */
+
+        /* 9:16 手机海报基础适配 */
+        .share-ratio-9-16 .share-content-main {
+            padding: 1.25rem !important;
+        }
+
+        .share-ratio-9-16 .header-area {
+            margin-bottom: 0.25rem !important;
+            padding-top: 0.25rem !important;
+        }
+
+        .share-ratio-9-16 .content-middle-area {
+            margin-top: -2rem !important;
+        }
+
+        .share-ratio-9-16 #poster-level {
+            font-size: 3.2rem !important;
+        }
+
+        .share-ratio-9-16 .level-title-area {
+            margin-bottom: 1rem !important;
+        }
+
+        .share-ratio-9-16 .poem-container {
+            height: 10rem !important;
+            margin-bottom: 1rem !important;
+            gap: 1.5rem !important;
+        }
+
+        .share-ratio-9-16 .font-poem {
+            font-size: 1.2rem !important;
+        }
+
+        .share-ratio-9-16 .wish-box {
+            padding: 0.6rem 1rem !important;
+            max-width: 90% !important;
+        }
+
+        .share-ratio-9-16 #poster-wish {
+            font-size: 0.85rem !important;
+            display: -webkit-box;
+            line-clamp: 3;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .share-ratio-9-16 .footer-area {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.25rem !important;
+            margin-top: 0 !important;
+        }
+
+        /* 3:4 小红书比例 */
+        .share-ratio-3-4 .share-content-main {
+            padding: 1rem !important;
+        }
+
+        .share-ratio-3-4 .header-area {
+            margin-bottom: 0.25rem !important;
+            padding-top: 0.15rem !important;
+        }
+
+        .share-ratio-3-4 #poster-level {
+            font-size: 2.6rem !important;
+        }
+
+        .share-ratio-3-4 .level-title-area {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .share-ratio-3-4 .content-middle-area {
+            margin-top: -3.5rem !important;
+        }
+
+        .share-ratio-3-4 .poem-container {
+            height: 7rem !important;
+            margin-bottom: 1rem !important;
+            gap: 1.25rem !important;
+        }
+
+        .share-ratio-3-4 .font-poem {
+            font-size: 0.9rem !important;
+            line-clamp: 2;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .share-ratio-3-4 .wish-box {
+            padding: 0.5rem 0.75rem !important;
+            max-width: 90% !important;
+        }
+
+        .share-ratio-3-4 #poster-wish {
+            font-size: 0.8rem !important;
+            display: -webkit-box;
+            line-clamp: 2;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .share-ratio-3-4 .poster-analysis {
+            font-size: 0.65rem !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .share-ratio-3-4 .footer-area {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.15rem !important;
+        }
+
+        /* 1:1 朋友圈比例 */
+        .share-ratio-1-1 .share-content-main {
+            padding: 1rem !important;
+        }
+
+        .share-ratio-1-1 .header-area {
+            margin-bottom: 0.1rem !important;
+            padding-top: 0.15rem !important;
+        }
+
+        .share-ratio-1-1 .content-middle-area {
+            margin-top: -5.5rem !important;
+        }
+
+        .share-ratio-1-1 #poster-level {
+            font-size: 2rem !important;
+        }
+
+        .share-ratio-1-1 .level-title-area {
+            margin-bottom: 0.25rem !important;
+        }
+
+        .share-ratio-1-1 .poem-container {
+            height: 6.8rem !important;
+            margin-bottom: 0.4rem !important;
+            gap: 1rem !important;
+        }
+
+        .share-ratio-1-1 .poem-col-2 {
+            padding-left: 1rem !important;
+        }
+
+        .share-ratio-1-1 .font-poem {
+            font-size: 0.85rem !important;
+            line-height: 1.1 !important;
+        }
+
+        .share-ratio-1-1 .wish-box {
+            padding: 0.5rem 0.75rem !important;
+            max-width: 88% !important;
+        }
+
+        .share-ratio-1-1 .wish-box .mb-3 {
+            margin-bottom: 0.25rem !important;
+        }
+
+        .share-ratio-1-1 #poster-wish {
+            font-size: 0.8rem !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .share-ratio-1-1 .poster-analysis {
+            font-size: 0.65rem !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .share-ratio-1-1 .footer-area {
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.25rem !important;
+            margin-top: -0.5rem !important;
+        }
+
+        .share-ratio-1-1 #qrcode-box {
+            width: 2.5rem !important;
+            height: 2.5rem !important;
+        }
+
+        .share-ratio-1-1 #qrcode-box canvas,
+        .share-ratio-1-1 #qrcode-box img {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .share-ratio-1-1 .footer-title {
+            font-size: 1rem !important;
+        }
+
+        .share-ratio-1-1 .footer-subtitle {
+            font-size: 7px !important;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center justify-center">
+
+    <!-- 装饰 -->
+    <div class="lantern" style="left: 10%; animation-delay: 0s;"></div>
+    <div class="lantern" style="left: 80%; animation-delay: 1.5s; transform: scale(0.9);"></div>
+    <div id="snow-container" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <main
+        class="relative z-10 w-full max-w-lg px-6 py-6 flex flex-col items-center min-h-[90vh] justify-center transition-all duration-500"
+        id="main-stage">
+        <header class="text-center mb-10">
+            <h1 class="font-calligraphy text-6xl text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-lg"
+                style="text-shadow: 0 4px 10px rgba(122, 26, 35, 0.6);">
+                新年祈福
+            </h1>
+            <div class="mt-4 flex items-center justify-center gap-3 opacity-90">
+                <span class="w-8 h-[1px] bg-yellow-400/50"></span>
+                <span class="text-yellow-200 font-serif tracking-[0.4em] text-sm">灵签指路 · 遇事不决</span>
+                <span class="w-8 h-[1px] bg-yellow-400/50"></span>
+            </div>
+        </header>
+
+        <div id="input-box" class="w-full glass-card rounded-2xl p-6 transition-all duration-500 transform">
+            <div class="mb-6 relative">
+                <label
+                    class="block text-center text-yellow-100 text-sm font-serif mb-3 tracking-widest opacity-80">默念心中所求
+                    · 诚心祷告</label>
+                <textarea id="wish-input"
+                    class="w-full bg-red-950/40 border border-yellow-600/30 rounded-xl p-5 text-yellow-50 placeholder-yellow-100/20 focus:outline-none focus:border-yellow-500/50 transition resize-none text-center font-serif text-lg h-32"
+                    placeholder="例如：新的一年，愿家人安康，事业顺遂..."></textarea>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 mb-8">
+                <button onclick="setWish('愿全家平安健康，无病无灾，喜乐长安')"
+                    class="px-3 py-1.5 bg-red-900/30 border border-red-200/20 rounded-lg text-xs text-yellow-100/70 hover:bg-red-800 transition">🏮
+                    阖家安康</button>
+                <button onclick="setWish('愿财源广进，事业步步高升，贵人相助')"
+                    class="px-3 py-1.5 bg-red-900/30 border border-red-200/20 rounded-lg text-xs text-yellow-100/70 hover:bg-red-800 transition">💰
+                    财运亨通</button>
+                <button onclick="setWish('愿得一心人，白首不相离，姻缘美满')"
+                    class="px-3 py-1.5 bg-red-900/30 border border-red-200/20 rounded-lg text-xs text-yellow-100/70 hover:bg-red-800 transition">❤️
+                    姻缘美满</button>
+                <button onclick="setWish('愿逢考必过，金榜题名，学业有成')"
+                    class="px-3 py-1.5 bg-red-900/30 border border-red-200/20 rounded-lg text-xs text-yellow-100/70 hover:bg-red-800 transition">🎓
+                    金榜题名</button>
+            </div>
+
+            <button onclick="startRitual()"
+                class="w-full btn-gold py-4 rounded-xl text-lg tracking-[0.3em] flex items-center justify-center gap-2">
+                <span class="font-calligraphy text-2xl">开启祈福</span>
+            </button>
+        </div>
+
+        <div id="cylinder-stage" class="hidden flex-col items-center justify-center h-80 relative w-full">
+            <div id="ritual-status"
+                class="absolute -top-8 text-yellow-200 font-calligraphy text-2xl animate-pulse tracking-widest z-20">
+                凝神聚气 · 诚心摇动...
+            </div>
+            <div id="bamboo-cylinder" class="bamboo-cylinder-wrapper mt-12 transform origin-bottom">
+                <div class="bamboo-top"></div>
+                <div class="bamboo-body">
+                    <div class="bamboo-joint" style="top: 30%;"></div>
+                    <div class="bamboo-joint" style="bottom: 25%;"></div>
+                    <svg class="plum-decor" viewBox="0 0 100 150" overflow="visible">
+                        <path d="M40 150 C40 120 60 100 20 80 C-10 60 30 40 10 10" stroke="#3e2723" stroke-width="2"
+                            fill="none" opacity="0.6" />
+                        <path d="M40 120 C60 110 80 130 90 100" stroke="#3e2723" stroke-width="1.5" fill="none"
+                            opacity="0.5" />
+                        <g fill="#c02c38" opacity="0.8">
+                            <circle cx="10" cy="10" r="4" />
+                            <circle cx="20" cy="80" r="3" />
+                            <circle cx="90" cy="100" r="3.5" />
+                        </g>
+                    </svg>
+                </div>
+                <div id="flying-stick"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 w-8 h-64 bg-[#fdfbf7] border border-[#d4c4b0] hidden z-0 flex items-start justify-center pt-4 shadow-xl rounded-t-sm"
+                    style="background: linear-gradient(to right, #fdfbf7 0%, #f2e9d8 100%);">
+                    <div class="absolute top-0 w-full h-4 bg-[#c02c38]"></div>
+                    <span id="stick-label"
+                        class="writing-vertical font-calligraphy text-[#2b2b2b] font-bold text-xl mt-6 tracking-widest">上上签</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 结果弹窗 -->
+    <div id="result-modal"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md hidden opacity-0 transition-opacity duration-500 p-4">
+        <!-- 关闭按钮 -->
+        <button onclick="closeResult()"
+            class="absolute top-4 right-4 p-2 text-white/50 hover:text-white transition z-50">
+            <i data-lucide="x" class="w-8 h-8"></i>
+        </button>
+
+        <!-- 详细解读弹窗 (默认隐藏) -->
+        <div id="detail-overlay"
+            class="absolute inset-0 z-40 bg-black/80 flex items-center justify-center p-6 hidden backdrop-blur-sm transition-all duration-300">
+            <div class="bg-[#b91c1c] w-full max-w-sm rounded-xl border border-yellow-500/50 p-6 shadow-2xl relative">
+                <button onclick="toggleDetail()" class="absolute top-2 right-2 text-yellow-200 hover:text-white"><i
+                        data-lucide="x" class="w-6 h-6"></i></button>
+                <div class="text-center mb-4 border-b border-white/10 pb-2">
+                    <h3 class="text-2xl font-calligraphy text-yellow-300">大师详解</h3>
+                    <p class="text-[10px] text-yellow-100/50 uppercase tracking-widest">Fortune Interpretation</p>
+                </div>
+                <div id="detail-content"
+                    class="text-yellow-100/90 text-sm leading-7 font-serif h-72 overflow-y-auto pr-2 text-justify no-scrollbar">
+                    <!-- AI 详细内容将填充此处 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 保存图片浮层 NEW VERSION -->
+        <div id="save-overlay-v2" onclick="handleOverlayClick()" data-v="3"
+            class="fixed inset-0 z-[100] bg-gradient-to-b from-red-950 to-red-900 flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+
+            <!-- 全屏灵签卡片(克隆) -->
+            <div id="fullscreen-card-clone" class="relative"></div>
+
+            <!-- 底部提示 NEW - 点击后隐藏 -->
+            <div id="save-hint"
+                class="absolute bottom-12 left-0 right-0 text-center z-10 px-4 transition-opacity duration-300">
+                <div
+                    class="inline-block bg-black/40 backdrop-blur-sm rounded-full px-6 py-3 border border-yellow-500/30">
+                    <p class="text-yellow-300 text-sm font-serif mb-1">📸 请截屏保存</p>
+                    <p class="text-white/60 text-xs">轻触隐藏提示 · 再次点击返回</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative w-full h-full max-h-[85vh] flex items-center justify-center overflow-hidden">
+            <div id="share-card-container"
+                class="bg-[#b91c1c] relative shadow-2xl origin-center transition-all duration-300">
+                <div class="poster-bg-texture"></div>
+                <div class="poster-border-outer"></div>
+                <div class="poster-border-inner"></div>
+                <div class="poster-corner c-tl"></div>
+                <div class="poster-corner c-tr"></div>
+                <div class="poster-corner c-bl"></div>
+                <div class="poster-corner c-br"></div>
+
+                <div class="flex flex-col h-full p-8 relative z-20 share-content-main">
+                    <div class="flex justify-between items-start mb-6 pt-4 px-2 header-area">
+                        <div class="flex flex-col text-yellow-200/90">
+                            <span class="text-[10px] tracking-[0.4em] font-serif uppercase">Fortune 2026</span>
+                            <span class="text-xs font-mono opacity-80 mt-1" id="current-date">2026.01.14</span>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border border-yellow-200">
+                            <span class="font-seal text-[#7a1a23] text-2xl pt-1">福</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col items-center justify-center relative -mt-6 content-middle-area">
+                        <div
+                            class="absolute text-[180px] text-black/10 font-seal select-none pointer-events-none -z-10 bg-word-ji">
+                            吉</div>
+                        <div class="mb-8 relative flex items-center justify-center level-title-area">
+                            <div
+                                class="w-[1px] h-20 bg-gradient-to-b from-transparent via-yellow-500/60 to-transparent mr-6 side-line">
+                            </div>
+                            <div class="font-calligraphy text-[4.5rem] leading-none tracking-widest text-[#fcd34d]"
+                                style="text-shadow: 2px 2px 0px rgba(0,0,0,0.3);" id="poster-level">
+                                <!-- JS Dynamic -->
+                            </div>
+                            <div
+                                class="w-[1px] h-20 bg-gradient-to-b from-transparent via-yellow-500/60 to-transparent ml-6 side-line">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-8 justify-center h-48 mb-8 poem-container">
+                            <div class="font-poem text-2xl text-yellow-50/95 leading-loose tracking-widest text-justify"
+                                id="poster-poem-1"></div>
+                            <div class="font-poem text-2xl text-yellow-50/95 leading-loose tracking-widest text-justify border-l border-white/20 pl-6 poem-col-2"
+                                id="poster-poem-2"></div>
+                        </div>
+
+                        <div
+                            class="w-full max-w-[90%] bg-[#450a0a]/40 border border-yellow-500/40 p-5 rounded-lg shadow-inner backdrop-blur-sm wish-box">
+                            <div class="flex items-start gap-3 mb-3">
+                                <span
+                                    class="text-[10px] bg-yellow-600 font-bold text-white px-2 py-0.5 rounded flex-shrink-0">祈愿</span>
+                                <div id="poster-wish" class="text-sm font-bold text-yellow-100 font-serif">
+                                </div>
+                            </div>
+                            <div class="w-full h-[1px] bg-white/10 mb-3 divider"></div>
+                            <div class="flex items-start gap-3">
+                                <span
+                                    class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded flex-shrink-0">大师曰</span>
+                                <div id="poster-analysis"
+                                    class="text-xs text-gray-200 leading-relaxed text-center poster-analysis">
+                                    大师正在思考...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-auto pt-6 pb-2 flex justify-between items-center border-t border-white/10 px-2 footer-area">
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-yellow-500"></i>
+                                <span class="font-calligraphy text-2xl text-yellow-400 footer-title">灵签指路</span>
+                            </div>
+                            <span class="text-[9px] text-yellow-100/50 tracking-wider font-mono footer-subtitle">SCAN TO
+                                GET YOUR
+                                FORTUNE</span>
+                        </div>
+                        <div class="bg-white p-1.5 rounded-md shadow-lg qrcode-wrapper">
+                            <div id="qrcode-box" class="w-14 h-14"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ai-loading-mask"
+                class="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center text-white hidden">
+                <div class="w-10 h-10 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mb-3">
+                </div>
+                <span class="text-sm font-serif tracking-widest text-yellow-100">大师正在解签...</span>
+            </div>
+        </div>
+
+        <div class="w-full max-w-lg mt-4 flex flex-col gap-4 z-50">
+            <div class="flex justify-center gap-3">
+                <button onclick="changeRatio('9-16')"
+                    class="ratio-btn px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-xs text-white">9:16<br>手机海报</button>
+                <button onclick="changeRatio('3-4')"
+                    class="ratio-btn px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-xs text-white">3:4<br>小红书</button>
+                <button onclick="changeRatio('1-1')"
+                    class="ratio-btn px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-xs text-white">1:1<br>朋友圈</button>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="downloadCard()"
+                    class="flex-1 btn-gold py-3.5 rounded-xl flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-5 h-5"></i> 保存高清灵签
+                </button>
+                <button onclick="toggleDetail()"
+                    class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3.5 rounded-xl border border-white/20 flex items-center justify-center gap-2 backdrop-blur-sm transition">
+                    <i data-lucide="book-open" class="w-5 h-5"></i> 📜 查看详解
+                </button>
+                <button onclick="copyLink()"
+                    class="px-4 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 flex items-center justify-center backdrop-blur-sm"
+                    title="复制链接">
+                    <i data-lucide="link" class="w-5 h-5"></i>
+                </button>
+                <button onclick="closeResult()"
+                    class="px-4 bg-white/10 text-white font-bold py-3.5 rounded-xl border border-white/20">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 左下角 UI -->
+    <div class="bottom-ui">
+        <div id="user-pill" class="user-pill group" ondblclick="resetTrials()" title="双击重置试玩次数">
+            <div
+                class="w-6 h-6 rounded-full bg-yellow-500 text-red-900 flex items-center justify-center font-bold text-xs">
+                <span>客</span>
+            </div>
+            <div class="flex flex-col leading-tight">
+                <span class="font-bold text-white">游客试玩</span>
+                <span class="text-yellow-400/80 scale-90 origin-left" id="user-trials">剩余次数: 2</span>
+            </div>
+        </div>
+        <div
+            class="w-8 h-8 rounded-full bg-black/30 backdrop-blur flex items-center justify-center text-white/70 hover:bg-black/50 hover:text-white transition cursor-pointer">
+            <i data-lucide="home" class="w-4 h-4"></i>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            currentWish: '',
+            currentRatio: '1-1',
+            trials: 0
+        };
+
+        const FORTUNES_MAP = {
+            1: { level: "上上签", poem: "彩凤呈祥瑞气飘|龙腾虎跃上云霄" },
+            2: { level: "上吉签", poem: "春来花发映阳台|万里车书尽得通" },
+            3: { level: "中吉签", poem: "根深叶茂待春风|一举成名在其中" }
+        };
+
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+            createSnow();
+            generateQRCode();
+            changeRatio('1-1');
+            document.getElementById('current-date').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+
+            // 初始化试玩次数
+            state.trials = parseInt(localStorage.getItem('qifu_trials') || '0');
+            updateTrialsUI();
+        });
+
+        function updateTrialsUI() {
+            const btnStart = document.querySelector('button[onclick="startRitual()"]');
+            if (state.trials >= 2) {
+                document.getElementById('user-trials').innerText = `次数已用尽`;
+                if (btnStart) {
+                    btnStart.disabled = true;
+                    btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                document.getElementById('user-trials').innerText = `剩余次数: ${2 - state.trials}`;
+                if (btnStart) {
+                    btnStart.disabled = false;
+                    btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        function resetTrials() {
+            state.trials = 0;
+            localStorage.setItem('qifu_trials', '0');
+            updateTrialsUI();
+            console.log('✅ 试玩次数已重置');
+        }
+
+        function createSnow() {
+            const container = document.getElementById('snow-container');
+            for (let i = 0; i < 30; i++) {
+                const el = document.createElement('div');
+                el.className = 'fixed top-0 text-white opacity-40 pointer-events-none';
+                el.innerText = '❄';
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.animation = `fall ${Math.random() * 10 + 5}s linear infinite`;
+                el.style.fontSize = Math.random() * 10 + 5 + 'px';
+                container.appendChild(el);
+            }
+            const style = document.createElement('style');
+            style.innerHTML = `@keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }`;
+            document.head.appendChild(style);
+        }
+
+        function setWish(text) { document.getElementById('wish-input').value = text; }
+
+        function generateQRCode() {
+            new QRCode(document.getElementById("qrcode-box"), {
+                text: window.location.href,
+                width: 56, height: 56,
+                colorDark: "#b91c1c", colorLight: "#ffffff"
+            });
+        }
+
+        function startRitual() {
+            if (state.trials >= 2) return alert("试玩次数已用完，请注册登录。");
+
+            const wish = document.getElementById('wish-input').value.trim();
+            if (!wish) return alert("请先写下您的愿望");
+            state.currentWish = wish;
+
+            // 扣除次数
+            state.trials++;
+            localStorage.setItem('qifu_trials', state.trials);
+            updateTrialsUI();
+
+            document.getElementById('input-box').classList.add('hidden');
+            document.getElementById('cylinder-stage').classList.remove('hidden');
+            document.getElementById('cylinder-stage').classList.add('flex');
+
+            const cylinder = document.getElementById('bamboo-cylinder');
+            cylinder.classList.add('animate-shake-hard');
+
+            setTimeout(() => {
+                cylinder.classList.remove('animate-shake-hard');
+                const stickId = Math.floor(Math.random() * 3) + 1;
+                const fortune = FORTUNES_MAP[stickId];
+
+                const stick = document.getElementById('flying-stick');
+                document.getElementById('stick-label').innerText = fortune.level;
+                stick.classList.remove('hidden');
+                stick.classList.add('stick-appear');
+
+                setTimeout(() => showResult(fortune), 2000);
+            }, 3000);
+        }
+
+        function renderVerticalText(elId, text) {
+            const el = document.getElementById(elId);
+            el.innerHTML = '';
+            for (let char of text) {
+                const span = document.createElement('span');
+                span.innerText = char;
+                span.style.display = 'block';
+                el.appendChild(span);
+            }
+        }
+
+        async function showResult(fortune) {
+            // 1. 先更新静态数据 (在显示Modal之前)
+            document.getElementById('poster-wish').innerText = state.currentWish;
+            renderVerticalText('poster-level', fortune.level);
+            const lines = fortune.poem.split('|');
+            renderVerticalText('poster-poem-1', lines[0]);
+            renderVerticalText('poster-poem-2', lines[1]);
+
+            // 2. 重置动态区域及Loading状态
+            const posterAnalysis = document.getElementById('poster-analysis');
+            const detailContent = document.getElementById('detail-content');
+
+            posterAnalysis.innerText = '大师正在思考...';
+            detailContent.innerText = '';
+
+            const loadingMask = document.getElementById('ai-loading-mask');
+            loadingMask.classList.remove('hidden');
+            loadingMask.querySelector('span').innerText = "大师正在解签...";
+
+            // 3. 显示 modal (此时内容已是新的)
+            const modal = document.getElementById('result-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.style.opacity = '1', 10);
+
+            // 隐藏左下角 UI 避免遮挡
+            document.querySelector('.bottom-ui').style.display = 'none';
+
+            // 延迟应用比例,确保容器已渲染
+            setTimeout(() => {
+                changeRatio(state.currentRatio);
+            }, 100);
+
+            let fullTextBuffer = '';
+
+            // 调用流式 API
+            await streamFortuneAI(state.currentWish, fortune, {
+                onContent: (text) => {
+                    loadingMask.classList.add('hidden');
+                    fullTextBuffer += text;
+
+                    const shortMarker = '【简短寄语】';
+                    const fullMarker = '【详细解签】';
+
+                    let shortText = '';
+                    let fullAnalysisText = '';
+
+                    const shortIndex = fullTextBuffer.indexOf(shortMarker);
+                    const fullIndex = fullTextBuffer.indexOf(fullMarker);
+
+                    if (shortIndex !== -1 && fullIndex !== -1) {
+                        shortText = fullTextBuffer.substring(shortIndex + shortMarker.length, fullIndex).trim();
+                        fullAnalysisText = fullTextBuffer.substring(fullIndex + fullMarker.length).trim();
+                    } else if (shortIndex !== -1) {
+                        shortText = fullTextBuffer.substring(shortIndex + shortMarker.length).trim();
+                    } else if (fullIndex !== -1) {
+                        fullAnalysisText = fullTextBuffer.substring(fullIndex + fullMarker.length).trim();
+                    }
+
+                    if (shortText) posterAnalysis.innerText = shortText;
+                    if (fullAnalysisText) detailContent.innerText = fullAnalysisText;
+                },
+                onDone: () => {
+                    console.log('AI Generation Complete');
+                },
+                onError: (err) => {
+                    console.error('AI Stream Error:', err);
+                    loadingMask.classList.add('hidden');
+                    posterAnalysis.innerText = '大师正在休息,请稍后重试';
+                }
+            });
+        }
+
+        function toggleDetail() {
+            const overlay = document.getElementById('detail-overlay');
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        async function copyLink() {
+            const level = document.getElementById('poster-level').innerText.replace(/\s/g, '');
+            const wish = state.currentWish;
+            const shareText = `我在【灵签指路】求了一支${level}！愿望：${wish}\n快来测测你的2026运势吧：${window.location.href}`;
+
+            try {
+                await navigator.clipboard.writeText(shareText);
+                alert("链接及分享文案已复制到剪贴板！");
+            } catch (err) {
+                const textArea = document.createElement("textarea");
+                textArea.value = shareText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert("链接及分享文案已复制到剪贴板！");
+                } catch (e) {
+                    alert("复制失败，请手动复制浏览器地址栏链接。");
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function changeRatio(ratio) {
+            state.currentRatio = ratio;  // 更新状态
+            const container = document.getElementById('share-card-container');
+
+            // 先移除所有比例类
+            container.className = 'bg-[#b91c1c] relative shadow-2xl origin-center transition-all duration-300';
+
+            // 强制重绘
+            container.offsetHeight;
+
+            // 应用新比例
+            container.classList.add(`share-ratio-${ratio}`);
+
+            // 使用 requestAnimationFrame 确保 DOM 已更新
+            requestAnimationFrame(() => {
+                const scale = Math.min(
+                    window.innerWidth / container.offsetWidth * 0.85,
+                    window.innerHeight / container.offsetHeight * 0.65
+                );
+                container.style.transform = `scale(${scale})`;
+            });
+        }
+
+        function closeResult() {
+            const modal = document.getElementById('result-modal');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('input-box').classList.remove('hidden');
+                document.getElementById('cylinder-stage').classList.add('hidden');
+                document.getElementById('flying-stick').classList.add('hidden');
+                // 恢复左下角 UI
+                document.querySelector('.bottom-ui').style.display = 'flex';
+                // 清空内容以防残影
+                document.getElementById('poster-analysis').innerText = '';
+                document.getElementById('detail-content').innerText = '';
+            }, 300);
+
+            // 停止可能的语音播放(如果有的逻辑)
+            // ...
+        }
+
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                || window.innerWidth <= 768;
+        }
+
+        function downloadCard() {
+            if (isMobile()) {
+                showFullscreenCard();
+            } else {
+                // PC端: 恢复使用纯前端 html2canvas 下载 (速度更快)
+                downloadCardPC();
+            }
+        }
+
+        function showImageOverlay(imageUrl) {
+            const overlay = document.getElementById('save-overlay-v2');
+            const cloneContainer = document.getElementById('fullscreen-card-clone');
+
+            cloneContainer.innerHTML = `<img src="${imageUrl}" class="w-full h-auto rounded-lg shadow-2xl" style="max-height: 80vh; object-fit: contain;">`;
+
+            document.getElementById('save-hint-text').innerText = "长按图片保存 · 转发给好友";
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.style.opacity = '1', 10);
+        }
+
+        function showFullscreenCard() {
+            const overlay = document.getElementById('save-overlay-v2');
+            const cloneContainer = document.getElementById('fullscreen-card-clone');
+            const originalCard = document.getElementById('share-card-container');
+
+            // 克隆灵签卡片
+            const cardClone = originalCard.cloneNode(true);
+            cardClone.id = 'cloned-card';
+            cardClone.style.transform = 'none'; // 移除原始transform
+
+            // 清空之前的克隆
+            cloneContainer.innerHTML = '';
+            cloneContainer.appendChild(cardClone);
+
+            // 使用requestAnimationFrame确保DOM已渲染
+            requestAnimationFrame(() => {
+                // 计算合适的缩放比例,为底部提示预留空间
+                const maxWidth = window.innerWidth * 0.85;
+                const maxHeight = window.innerHeight * 0.65; // 降低高度比例,为提示预留空间
+                const cardWidth = cardClone.offsetWidth;
+                const cardHeight = cardClone.offsetHeight;
+
+                const scale = Math.min(
+                    maxWidth / cardWidth,
+                    maxHeight / cardHeight,
+                    1.15  // 增大到 1.15，让卡片更大
+                );
+
+                cardClone.style.transform = `scale(${scale})`;
+                cardClone.style.transformOrigin = 'center center';
+                cardClone.style.boxShadow = '0 30px 80px rgba(0,0,0,0.6)';
+            });
+
+            // 显示浮层
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.style.opacity = '1', 10);
+        }
+
+        function downloadCardPC() {
+            const container = document.getElementById('share-card-container');
+            const loadingMask = document.getElementById('ai-loading-mask');
+
+            loadingMask.classList.remove('hidden');
+            loadingMask.querySelector('span').innerText = "正在生成高清海报...";
+
+            // 保存原始样式
+            const originalTransform = container.style.transform;
+            const originalOverflow = container.style.overflow;
+
+            // 临时移除文字截断限制
+            const wish = document.getElementById('poster-wish');
+            const analysis = document.getElementById('poster-analysis');
+            const originalWishStyle = wish.style.cssText;
+            const originalAnalysisStyle = analysis.style.cssText;
+
+            wish.style.display = 'block';
+            wish.style.webkitLineClamp = 'unset';
+            wish.style.overflow = 'visible';
+            analysis.style.display = 'block';
+            analysis.style.webkitLineClamp = 'unset';
+            analysis.style.overflow = 'visible';
+
+            // 移除transform,让容器恢复原始尺寸,并确保不裁剪边框
+            container.style.transform = 'scale(1)';
+            container.style.overflow = 'visible';
+
+            // 等待浏览器重绘
+            setTimeout(() => {
+                html2canvas(container, {
+                    scale: 2,
+                    backgroundColor: '#b91c1c',
+                    logging: false,
+                    allowTaint: true,
+                    useCORS: false,
+                    x: -5,  // 向左扩展5px
+                    y: -5,  // 向上扩展5px
+                    width: container.offsetWidth + 10,  // 宽度增加10px
+                    height: container.offsetHeight + 10  // 高度增加10px
+                }).then(canvas => {
+                    // 恢复所有样式
+                    container.style.transform = originalTransform;
+                    container.style.overflow = originalOverflow;
+                    wish.style.cssText = originalWishStyle;
+                    analysis.style.cssText = originalAnalysisStyle;
+
+                    const link = document.createElement('a');
+                    link.download = `祈福灵签_${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+
+                    loadingMask.classList.add('hidden');
+                }).catch(err => {
+                    // 恢复所有样式
+                    container.style.transform = originalTransform;
+                    container.style.overflow = originalOverflow;
+                    wish.style.cssText = originalWishStyle;
+                    analysis.style.cssText = originalAnalysisStyle;
+
+                    console.error('生成图片失败:', err);
+                    loadingMask.classList.add('hidden');
+                    alert('生成图片失败,请重试\n错误: ' + (err.message || '未知错误'));
+                });
+            }, 100);
+        }
+
+        function handleOverlayClick() {
+            const hint = document.getElementById('save-hint');
+            if (hint && hint.style.opacity !== '0') {
+                // 第一次点击:隐藏提示
+                hint.style.opacity = '0';
+                setTimeout(() => hint.style.display = 'none', 300);
+            } else {
+                // 第二次点击:关闭浮层
+                closeSaveModal();
+            }
+        }
+
+        function closeSaveModal() {
+            const overlay = document.getElementById('save-overlay-v2');
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+    </script>
+</body>
+
+</html>

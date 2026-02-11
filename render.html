@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Render Card</title>
+    <!-- 复用核心样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Ma+Shan+Zheng&family=Long+Cang&family=Zhi+Mang+Xing&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        .font-calligraphy {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .font-serif {
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        /* 比例样式 */
+        .share-ratio-9-16 {
+            width: 375px;
+            height: 667px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 flex items-center justify-center min-h-screen">
+
+    <!-- 渲染容器 -->
+    <div id="render-container" class="bg-[#b91c1c] relative shadow-2xl overflow-hidden share-ratio-9-16">
+        <!-- 装饰背景 -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none"
+            style="background-image: radial-gradient(circle at 50% 50%, #fcd34d 1px, transparent 1px); background-size: 20px 20px;">
+        </div>
+        <div class="absolute inset-4 border border-yellow-500/30 rounded-lg pointer-events-none"></div>
+        <div class="absolute inset-2 border border-yellow-500/20 rounded-xl pointer-events-none"></div>
+
+        <!-- 顶部信息 -->
+        <div class="absolute top-8 left-6 right-6 flex justify-between items-start z-10">
+            <div class="flex flex-col gap-1">
+                <span class="text-[10px] text-yellow-200/60 tracking-[0.2em] font-serif">FORTUNE 2026</span>
+                <span class="text-xl text-yellow-100 font-serif font-bold tracking-widest mt-1">2026.01.14</span>
+            </div>
+            <div
+                class="w-12 h-12 rounded-full border border-yellow-500/50 flex items-center justify-center bg-[#450a0a]/40 backdrop-blur-sm">
+                <span class="font-calligraphy text-xl text-yellow-500">福</span>
+            </div>
+        </div>
+
+        <!-- 签文主体 -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center z-0 mt-[-40px]">
+            <div class="relative">
+                <div class="text-6xl font-vertical font-calligraphy text-yellow-500 flex flex-col items-center gap-4 writing-vertical filter drop-shadow-lg"
+                    style="writing-mode: vertical-rl; text-orientation: upright;">
+                    <span id="card-level">上上签</span>
+                </div>
+
+                <!-- 装饰光效 -->
+                <div
+                    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-yellow-500/10 blur-[60px] rounded-full -z-10">
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-8 mt-12 opacity-90">
+                <div class="w-px h-16 bg-gradient-to-b from-transparent via-yellow-500/50 to-transparent"></div>
+                <div class="flex gap-6">
+                    <div id="card-poem-1" class="font-serif text-lg text-yellow-100 font-bold writing-vertical"
+                        style="writing-mode: vertical-rl; letter-spacing: 0.3em;">
+                        春来花发映阳台
+                    </div>
+                    <div id="card-poem-2" class="font-serif text-lg text-yellow-100 font-bold writing-vertical"
+                        style="writing-mode: vertical-rl; letter-spacing: 0.3em;">
+                        万里书香自此开
+                    </div>
+                </div>
+                <div class="w-px h-16 bg-gradient-to-b from-transparent via-yellow-500/50 to-transparent"></div>
+            </div>
+        </div>
+
+        <!-- 底部 AI 解析 -->
+        <div class="absolute bottom-24 left-6 right-6 z-10">
+            <div
+                class="w-full bg-[#450a0a]/40 border border-yellow-500/40 p-5 rounded-lg shadow-inner backdrop-blur-sm">
+                <div class="flex items-start gap-3 mb-3">
+                    <span
+                        class="text-[10px] bg-yellow-600 font-bold text-white px-2 py-0.5 rounded flex-shrink-0">祈愿</span>
+                    <div id="card-wish" class="text-sm font-bold text-yellow-100 font-serif"></div>
+                </div>
+                <div class="w-full h-[1px] bg-white/10 mb-3"></div>
+                <div class="flex items-start gap-3">
+                    <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded flex-shrink-0">大师曰</span>
+                    <div id="card-analysis" class="text-xs text-gray-200 leading-relaxed text-center"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 Logo 和 二维码 -->
+        <div
+            class="absolute bottom-6 left-6 right-6 flex justify-between items-end z-10 border-t border-yellow-500/20 pt-4">
+            <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-yellow-500"></i>
+                    <span class="font-calligraphy text-2xl text-yellow-400">灵签指路</span>
+                </div>
+                <span class="text-[9px] text-yellow-100/50 tracking-wider font-mono">SCAN TO GET YOUR FORTUNE</span>
+            </div>
+
+            <div class="bg-white p-1 rounded shadow-lg">
+                <div id="qrcode" class="w-12 h-12"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 接收数据并渲染
+        function renderData(data) {
+            document.getElementById('card-level').innerText = data.level;
+            document.getElementById('card-poem-1').innerText = data.poem1;
+            document.getElementById('card-poem-2').innerText = data.poem2;
+            document.getElementById('card-wish').innerText = data.wish;
+            document.getElementById('card-analysis').innerText = data.analysis;
+
+            // 生成二维码
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById("qrcode"), {
+                text: window.location.origin, // 指向首页
+                width: 48,
+                height: 48,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // 标记渲染完成,供Puppeteer检测
+            document.body.classList.add('render-complete');
+        }
+
+        // 解析 URL 参数初始化数据(开发调试用)
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('level')) {
+            renderData({
+                level: params.get('level'),
+                poem1: params.get('poem1'),
+                poem2: params.get('poem2'),
+                wish: params.get('wish'),
+                analysis: params.get('analysis')
+            });
+        }
+    </script>
+</body>
+
+</html>
