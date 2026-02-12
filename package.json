@@ -1,12 +1,32 @@
 {
-  "name": "qifu-fortune",
+  "name": "fortune-sign",
   "version": "1.0.0",
-  "description": "新春祈福灵签 - 智谱AI免费模型",
+  "description": "灵签之路 - 基于智谱AI GLM-4-Flash的免费祈福应用",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
+  "keywords": [
+    "fortune",
+    "sign",
+    "zhipu-ai",
+    "glm-4-flash",
+    "chinese-culture",
+    "divination",
+    "新春祈福",
+    "灵签"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/fortune-sign.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/fortune-sign/issues"
+  },
+  "homepage": "https://github.com/yourusername/fortune-sign#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
